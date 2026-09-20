@@ -45,3 +45,8 @@ cd 2026.09.20/06_Web_Tiklama_Heatmap_Analizi
 
 # Uvicorn ile sunucuyu başlatın
 python -m uvicorn app:app --reload
+
+## 7. Profesyonel Akıllı Belge Tarayıcı (Document Scanner)
+
+* **Açıklama:** OpenCV ve Streamlit kullanarak gerçek zamanlı belge algılama, perspektif düzeltme, tarayıcı filtresi uygulama ve PDF olarak dışa aktarma özelliklerine sahip masaüstü web uygulaması.
+* **Teknolojiler:** Python, OpenCV, NumPy, Streamlit, FPDF2
