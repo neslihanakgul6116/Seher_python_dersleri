@@ -30,6 +30,11 @@ Bu repository, Python, FastAPI, OpenCV, NumPy ve Matplotlib gibi modern teknoloj
 * **Açıklama:** Kullanıcıların web sitesi üzerinde en çok tıkladığı alanları görselleştirerek UI/UX optimizasyonu sağlayan ısı haritası aracı.
 * **Teknolojiler:** Python, FastAPI, Matplotlib, NumPy
 
+## 7. Profesyonel Akıllı Belge Tarayıcı (Document Scanner)
+
+* **Açıklama:** OpenCV ve Streamlit kullanarak gerçek zamanlı belge algılama, perspektif düzeltme, tarayıcı filtresi uygulama ve PDF olarak dışa aktarma özelliklerine sahip masaüstü web uygulaması.
+* **Teknolojiler:** Python, OpenCV, NumPy, Streamlit, FPDF2
+
 ---
 
 ## 🚀 Kurulum ve Çalıştırma
@@ -46,7 +51,3 @@ cd 2026.09.20/06_Web_Tiklama_Heatmap_Analizi
 # Uvicorn ile sunucuyu başlatın
 python -m uvicorn app:app --reload
 
-## 7. Profesyonel Akıllı Belge Tarayıcı (Document Scanner)
-
-* **Açıklama:** OpenCV ve Streamlit kullanarak gerçek zamanlı belge algılama, perspektif düzeltme, tarayıcı filtresi uygulama ve PDF olarak dışa aktarma özelliklerine sahip masaüstü web uygulaması.
-* **Teknolojiler:** Python, OpenCV, NumPy, Streamlit, FPDF2
