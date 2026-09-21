@@ -8,6 +8,12 @@ st.set_page_config(
     page_title="Akıllı Belge Tarayıcı", page_icon="📄", layout="wide"
 )
 
+# --- OTURUM YÖNETİMİ (Çoklu PDF İçin) ---
+if "scanned_images" not in st.session_state:
+  st.session_state.scanned_images = (
+      []
+  )  # Taranan tüm görseller burada birikecek
+
 # --- YARDIMCI FONKSİYONLAR (GÖRÜNTÜ İŞLEME) ---
 
 
@@ -72,45 +78,62 @@ def process_document(image):
   if screenCnt is not None:
     warped = four_point_transform(orig, screenCnt.reshape(4, 2) * ratio)
   else:
-    warped = orig  # Bulamazsa orijinalini döndür
+    warped = orig
 
   # --- DENGELİ FOTOKOPİ EFEKTİ ---
   warped_gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
-
-  # Yazıları kaybetmeden arka planı temizleyen ideal eşikleme
   tresh = cv2.adaptiveThreshold(
       warped_gray,
       255,
       cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
       cv2.THRESH_BINARY,
       11,
-      10,  # Orijinal dengeli değerler
+      10,
   )
   return tresh
 
 
-def save_as_pdf(image):
-  """Taranan resmi PDF formatına dönüştürür"""
-  temp_img_path = "temp_scanned.jpg"
-  cv2.imwrite(temp_img_path, image)
-
+def generate_multi_page_pdf(image_list):
+  """Biriken tüm taranmış resimleri tek bir çok sayfalı PDF'e dönüştürür"""
   pdf = FPDF()
-  pdf.add_page()
-  pdf.image(temp_img_path, x=10, y=10, w=190)
-  pdf_output_path = "taranmis_belge.pdf"
+  temp_paths = []
+
+  for i, img in enumerate(image_list):
+    temp_img_path = f"temp_scanned_{i}.jpg"
+    cv2.imwrite(temp_img_path, img)
+    temp_paths.append(temp_img_path)
+
+    pdf.add_page()
+    pdf.image(temp_img_path, x=10, y=10, w=190)
+
+  pdf_output_path = "ortak_taranmis_belgeler.pdf"
   pdf.output(pdf_output_path)
 
-  if os.path.exists(temp_img_path):
-    os.remove(temp_img_path)
+  # Geçici resim dosyalarını temizle
+  for path in temp_paths:
+    if os.path.exists(path):
+      os.remove(path)
+
   return pdf_output_path
 
 
 # --- ARAYÜZ (STREAMLIT) ---
-st.title("📄 Profesyonel Akıllı Belge Tarayıcı")
+st.title("📄 Profesyonel Akıllı Belge Tarayıcı (Çok Sayfalı)")
 st.markdown(
-    "YOLO kullanmadan saf matematiksel geometri ve kontur analiziyle"
-    " belgelerinizi tarayın, PDF olarak kaydedin."
+    "Yaptığın tüm taramalar (Fotoğraf, Kamera, Video) **tek bir ortak PDF"
+    " dosyasında** sayfa sayfa birikir."
 )
+
+# Kenar Çubuğu: Hafızadaki taranan belgeleri yönetme
+st.sidebar.title("📁 Arşiv Yönetimi")
+st.sidebar.write(
+    f"Şu an hafızada **{len(st.session_state.scanned_images)}** belge var."
+)
+
+if st.sidebar.button("🗑️ Arşivi (PDF'i) Sıfırla"):
+  st.session_state.scanned_images = []
+  st.success("Arşiv temizlendi!")
+  st.rerun()
 
 menu = st.sidebar.selectbox(
     "Mod Seçin", ["Fotoğraf Yükle", "Canlı Kamera", "Video Dosyası Yükle"]
@@ -135,26 +158,22 @@ if menu == "Fotoğraf Yükle":
           use_container_width=True,
       )
 
-    if st.button("Belgeyi Tara ve Düzelt"):
-      with st.spinner("Belge taranıyor ve perspektif ayarlanıyor..."):
+    if st.button("Belgeyi Tara ve Arşive Ekle"):
+      with st.spinner("Belge taranıyor ve arşive ekleniyor..."):
         scanned_image = process_document(opencv_image)
+        st.session_state.scanned_images.append(scanned_image)
 
       with col2:
         st.image(
             scanned_image,
-            caption="Taranmış Belge (Fotokopi Modu)",
+            caption=(
+                "Son Eklenen Taranmış Belge (Toplam:"
+                f" {len(st.session_state.scanned_images)})"
+            ),
             use_container_width=True,
             clamp=True,
         )
-
-      pdf_path = save_as_pdf(scanned_image)
-      with open(pdf_path, "rb") as pdf_file:
-        st.download_button(
-            label="📥 PDF Olarak İndir",
-            data=pdf_file,
-            file_name="akilli_belge.pdf",
-            mime="application/pdf",
-        )
+      st.success("Belge başarıyla arşive eklendi!")
 
 # 2. MOD: CANLI KAMERA
 elif menu == "Canlı Kamera":
@@ -162,7 +181,7 @@ elif menu == "Canlı Kamera":
   run_camera = st.checkbox("Kamerayı Aç")
 
   camera_placeholder = st.empty()
-  capture_button = st.button("Anlık Görüntü Yakala ve Tara")
+  capture_button = st.button("Anlık Görüntü Yakala ve Arşive Ekle")
 
   if run_camera:
     cap = cv2.VideoCapture(0)
@@ -177,20 +196,11 @@ elif menu == "Canlı Kamera":
 
       if capture_button:
         scanned_image = process_document(frame)
-        st.image(
-            scanned_image,
-            caption="Yakalanan ve Taranan Belge",
-            use_container_width=True,
-            clamp=True,
+        st.session_state.scanned_images.append(scanned_image)
+        st.success(
+            "Kameradan alınan belge arşive eklendi! (Toplam:"
+            f" {len(st.session_state.scanned_images)})"
         )
-        pdf_path = save_as_pdf(scanned_image)
-        with open(pdf_path, "rb") as pdf_file:
-          st.download_button(
-              label="📥 Taranan Belgeyi PDF İndir",
-              data=pdf_file,
-              file_name="kamera_belge.pdf",
-              mime="application/pdf",
-          )
         break
     cap.release()
 
@@ -208,29 +218,43 @@ elif menu == "Video Dosyası Yükle":
 
     st.video(video_path)
 
-    if st.button("Videonun İlk Karelerini Tara"):
+    if st.button("Videonun İlk Karelerini Tara ve Arşive Ekle"):
       cap = cv2.VideoCapture(video_path)
       ret, frame = cap.read()
       cap.release()
 
       if ret:
         scanned_image = process_document(frame)
-        st.image(
-            scanned_image,
-            caption="Videodan Elde Edilen Belge",
-            use_container_width=True,
-            clamp=True,
+        st.session_state.scanned_images.append(scanned_image)
+        st.success(
+            "Videodan elde edilen belge arşive eklendi! (Toplam:"
+            f" {len(st.session_state.scanned_images)})"
         )
-        pdf_path = save_as_pdf(scanned_image)
-        with open(pdf_path, "rb") as pdf_file:
-          st.download_button(
-              label="📥 Video Belgesini PDF İndir",
-              data=pdf_file,
-              file_name="video_belge.pdf",
-              mime="application/pdf",
-          )
       else:
         st.error("Video okunamadı!")
 
     if os.path.exists(video_path):
       os.remove(video_path)
+
+# --- ORTAK PDF İNDİRME BÖLÜMÜ (TÜM SAYFALAR) ---
+st.markdown("---")
+st.subheader("📥 Tüm Taranan Belgeleri Ortak PDF Olarak İndir")
+
+if len(st.session_state.scanned_images) > 0:
+  st.info(
+      f"Şu anda hafızada biriken toplam **{len(st.session_state.scanned_images)}"
+      " sayfalık** bir PDF indirilmeye hazırdır."
+  )
+  pdf_path = generate_multi_page_pdf(st.session_state.scanned_images)
+  with open(pdf_path, "rb") as pdf_file:
+    st.download_button(
+        label="📥 Tüm Arşivi PDF Olarak İndir",
+        data=pdf_file,
+        file_name="tum_taranmis_belgeler.pdf",
+        mime="application/pdf",
+    )
+else:
+  st.warning(
+      "Henüz taranıp arşive eklenmiş bir belge yok. Yukarıdaki modlardan belge"
+      " taratın."
+  )
