@@ -47,7 +47,7 @@ def four_point_transform(image, pts):
 
 
 def process_document(image):
-  """Belgeyi algılar, köşe bulur ve fotokopi efekti uygular"""
+  """Belgeyi algılar, köşe bulur ve dengeli fotokopi efekti uygular"""
   orig = image.copy()
   ratio = image.shape[0] / 500.0
   image_resized = cv2.resize(image, (int(image.shape[1] / ratio), 500))
@@ -74,15 +74,17 @@ def process_document(image):
   else:
     warped = orig  # Bulamazsa orijinalini döndür
 
-  # Fotokopi Efekti (Adaptive Threshold)
+  # --- DENGELİ FOTOKOPİ EFEKTİ ---
   warped_gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
+
+  # Yazıları kaybetmeden arka planı temizleyen ideal eşikleme
   tresh = cv2.adaptiveThreshold(
       warped_gray,
       255,
       cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
       cv2.THRESH_BINARY,
       11,
-      10,
+      10,  # Orijinal dengeli değerler
   )
   return tresh
 
@@ -111,9 +113,10 @@ st.markdown(
 )
 
 menu = st.sidebar.selectbox(
-    "Mod Seçin", ["Fotoğraf Yükle", "Kamera / Video Akışı"]
+    "Mod Seçin", ["Fotoğraf Yükle", "Canlı Kamera", "Video Dosyası Yükle"]
 )
 
+# 1. MOD: FOTOĞRAF YÜKLE
 if menu == "Fotoğraf Yükle":
   st.subheader("📷 Fotoğraf Üzerinden Belge Tarama")
   uploaded_file = st.file_uploader(
@@ -144,7 +147,6 @@ if menu == "Fotoğraf Yükle":
             clamp=True,
         )
 
-      # PDF İndirme Butonu
       pdf_path = save_as_pdf(scanned_image)
       with open(pdf_path, "rb") as pdf_file:
         st.download_button(
@@ -154,7 +156,8 @@ if menu == "Fotoğraf Yükle":
             mime="application/pdf",
         )
 
-elif menu == "Kamera / Video Akışı":
+# 2. MOD: CANLI KAMERA
+elif menu == "Canlı Kamera":
   st.subheader("📹 Canlı Kamera ile Belge Yakalama")
   run_camera = st.checkbox("Kamerayı Aç")
 
@@ -190,3 +193,44 @@ elif menu == "Kamera / Video Akışı":
           )
         break
     cap.release()
+
+# 3. MOD: VİDEO DOSYASI YÜKLE
+elif menu == "Video Dosyası Yükle":
+  st.subheader("🎬 Video Dosyası Üzerinden Belge Tarama")
+  uploaded_video = st.file_uploader(
+      "Bir video dosyası seçin...", type=["mp4", "avi", "mov"]
+  )
+
+  if uploaded_video is not None:
+    video_path = "temp_video.mp4"
+    with open(video_path, "wb") as f:
+      f.write(uploaded_video.read())
+
+    st.video(video_path)
+
+    if st.button("Videonun İlk Karelerini Tara"):
+      cap = cv2.VideoCapture(video_path)
+      ret, frame = cap.read()
+      cap.release()
+
+      if ret:
+        scanned_image = process_document(frame)
+        st.image(
+            scanned_image,
+            caption="Videodan Elde Edilen Belge",
+            use_container_width=True,
+            clamp=True,
+        )
+        pdf_path = save_as_pdf(scanned_image)
+        with open(pdf_path, "rb") as pdf_file:
+          st.download_button(
+              label="📥 Video Belgesini PDF İndir",
+              data=pdf_file,
+              file_name="video_belge.pdf",
+              mime="application/pdf",
+          )
+      else:
+        st.error("Video okunamadı!")
+
+    if os.path.exists(video_path):
+      os.remove(video_path)
