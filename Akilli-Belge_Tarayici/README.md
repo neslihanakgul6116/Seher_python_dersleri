@@ -9,9 +9,10 @@ Bu proje, telefon veya web kamerasından alınan eğri/açılı belge fotoğrafl
 
 * **📷 Fotoğraf Yükleme Desteği:** Bilgisayarınızdan `.jpg`, `.png` formatındaki belgeleri yükleyip tarayabilme.
 * **📹 Canlı Kamera Desteği:** Canlı video akışı üzerinden anlık belge yakalama.
+* **🎬 Video Dosyası Desteği:** Video dosyalarındaki kareleri işleyerek belge elde edebilme.
 * **📐 Perspektif Düzeltme (Warp Perspective):** Belgenin 4 köşesini otomatik algılayıp ekrana dikleştirme.
-* **✨ Adaptif Eşikleme (Adaptive Threshold):** Gölgelemeri silerek belgelere net fotokopi görünümü kazandırma.
-* **📥 PDF Çıktısı:** Taranan belgeleri tek tuşla `PDF` formatında indirebilme.
+* **✨ Adaptif Eşikleme (Adaptive Threshold):** Gölgeleri silerek belgelere net fotokopi görünümü kazandırma.
+* **📚 Çok Sayfalı Ortak PDF Arşivi:** Farklı modlarda yapılan tüm taramaları kaybetmeden, **tek bir ortak PDF dosyasında** sayfa sayfa biriktirme ve yönetme imkanı.
 
 ---
 
@@ -20,7 +21,7 @@ Bu proje, telefon veya web kamerasından alınan eğri/açılı belge fotoğrafl
 * **OpenCV (`cv2`)**: Görüntü işleme, kontur bulma ve perspektif dönüşümleri için.
 * **NumPy**: Matris ve geometri hesaplamaları için.
 * **Streamlit**: Modern ve hızlı web arayüzü oluşturmak için.
-* **FPDF2**: Taranan belgeleri PDF belgesine dönüştürmek için.
+* **FPDF2**: Taranan belgeleri çok sayfalı PDF belgesine dönüştürmek için.
 
 ---
 
